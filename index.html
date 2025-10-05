@@ -121,12 +121,14 @@
                  <div>
                     <label for="platform" class="block text-sm font-medium text-gray-700">ตัวเลือก</label>
                     <select id="platform" class="mt-1 block w-full border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2" disabled>
-                        <option value="" disabled selected>-- เลือกธุรกรรม --</option> <!-- NEW PLACEHOLDER -->
-                        <option value="Shopee(Auy)">Shopee(Auy)</option> 
-                        <option value="ลูกค้า(OV)">ลูกค้า(OV)</option> <!-- CHANGED NAME HERE -->
+                        <option value="" disabled selected>-- เลือกธุรกรรม --</option>
+                        <option value="Shopee(Auy)">Shopee(Auy)</option>
+                        <option value="Shopee(Aom)">Shopee(Aom)</option>
+                        <option value="ลูกค้า(OV)">ลูกค้า(OV)</option>
+                        <option value="ลูกค้า(ทั่วไป)">ลูกค้า(ทั่วไป)</option>
                         <option value="Lazada(Aom)">Lazada(Aom)</option>
                         <option value="สั่งซื้อสินค้า">สั่งซื้อสินค้า</option>
-                        <option value="เงินเดือนพนักงาน" class="expense-only">เงินเดือนพนักงาน</option> <!-- NEW OPTION -->
+                        <option value="เงินเดือนพนักงาน" class="expense-only">เงินเดือนพนักงาน</option>
                     </select>
                 </div>
                 
@@ -608,9 +610,11 @@
 
         function getPlatformColor(platform) {
             switch(platform) {
-                case 'Shopee(Auy)': return 'text-orange-500'; 
+                case 'Shopee(Auy)':
+                case 'Shopee(Aom)': return 'text-orange-500';
                 case 'Lazada(Auy)': 
-                case 'ลูกค้า(OV)': return 'text-blue-500'; // UPDATED LOGIC HERE
+                case 'ลูกค้า(OV)':
+                case 'ลูกค้า(ทั่วไป)': return 'text-blue-500';
                 case 'Lazada(Aom)': return 'text-sky-600';
                 case 'สั่งสินค้า': 
                 case 'สั่งซื้อสินค้า': return 'text-red-600'; 
@@ -717,7 +721,7 @@
                         opt.hidden = !isExpenseItem && index !== 0;
                     });
                     
-                    if (['Shopee(Auy)', 'ลูกค้า(OV)', 'Lazada(Aom)'].includes(platformInput.value)) { // Check for new name
+                    if (['Shopee(Auy)', 'Shopee(Aom)', 'ลูกค้า(OV)', 'ลูกค้า(ทั่วไป)', 'Lazada(Aom)'].includes(platformInput.value)) {
                          platformInput.value = 'สั่งซื้อสินค้า';
                     }
                     
@@ -729,7 +733,7 @@
                     });
                     
                     if (['สั่งซื้อสินค้า', 'เงินเดือนพนักงาน'].includes(platformInput.value) || platformInput.value === "") {
-                        platformInput.value = 'Shopee(Auy)'; // Set default to new name
+                        platformInput.value = 'Shopee(Auy)';
                     }
                 }
             } else {
@@ -770,7 +774,7 @@
             filterMonthInput.innerHTML = '';
             THAI_MONTHS.forEach(month => {
                 const option = document.createElement('option');
-                option.value = month.value; // <-- FIX: Changed from month.val
+                option.value = month.value;
                 option.textContent = month.name;
                 filterMonthInput.appendChild(option);
             });
