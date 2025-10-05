@@ -510,9 +510,10 @@
             let descriptionForTransaction = descriptionInput.value.trim(); 
 
             // --- Auto Description Logic ---
-            if (typeValue === 'income') {
+            const platformValue = platformInput.value;
+            if (typeValue === 'income' && platformValue !== 'ลูกค้า(OV)' && platformValue !== 'ลูกค้า(ทั่วไป)') {
                 descriptionForTransaction = "ยอดโอนเข้าบัญชี";
-            } else if (typeValue === 'expense' && platformInput.value === 'เงินเดือนพนักงาน') {
+            } else if (typeValue === 'expense' && platformValue === 'เงินเดือนพนักงาน') {
                 descriptionForTransaction = "เงินเดือน(Aom)";
             }
             // --- End Auto Description Logic ---
