@@ -127,6 +127,7 @@
                         <option value="ลูกค้า(OV)">ลูกค้า(OV)</option>
                         <option value="ลูกค้า(ทั่วไป)">ลูกค้า(ทั่วไป)</option>
                         <option value="Lazada(Aom)">Lazada(Aom)</option>
+                        <option value="อื่นๆ">อื่นๆ</option>
                         <option value="สั่งซื้อสินค้า">สั่งซื้อสินค้า</option>
                         <option value="เงินเดือนพนักงาน" class="expense-only">เงินเดือนพนักงาน</option>
                     </select>
@@ -511,7 +512,7 @@
 
             // --- Auto Description Logic ---
             const platformValue = platformInput.value;
-            if (typeValue === 'income' && platformValue !== 'ลูกค้า(OV)' && platformValue !== 'ลูกค้า(ทั่วไป)') {
+            if (typeValue === 'income' && (platformValue.startsWith('Shopee') || platformValue.startsWith('Lazada'))) {
                 descriptionForTransaction = "ยอดโอนเข้าบัญชี";
             } else if (typeValue === 'expense' && platformValue === 'เงินเดือนพนักงาน') {
                 descriptionForTransaction = "เงินเดือน(Aom)";
@@ -970,4 +971,3 @@
     </script>
 </body>
 </html>
-
