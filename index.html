@@ -28,7 +28,7 @@
             width: 100%;
             height: 100%;
             background-color: rgba(255, 255, 255, 0.8);
-            display: none; /* ซ่อนโดยค่าเริ่มต้น ตามคำขอ */
+            display: none; /* ซ่อนโดยค่าเริ่มต้น */
             justify-content: center;
             align-items: center;
             z-index: 9999;
@@ -45,6 +45,10 @@
         /* Ensure inputs take full width of their grid cell on all screens */
         .input-full-width {
             width: 100%;
+        }
+        /* CSS for the sticky panel visibility */
+        #sticky-summary-panel.visible {
+            transform: translateX(0); /* Slides the panel into view */
         }
     </style>
 </head>
@@ -64,20 +68,20 @@
         <!-- POSITION 1: Transaction List (ประวัติรายการ) -->
         <section class="bg-white p-6 rounded-xl shadow-md mb-8">
              <div class="flex flex-col md:flex-row justify-between items-center mb-4 border-b pb-4">
-                <h2 class="text-2xl font-bold mb-4 md:mb-0">ประวัติรายการ</h2>
-                <div class="flex flex-wrap items-center gap-2 md:gap-4">
-                    <!-- SWAPPED ORDER: MONTH FIRST -->
-                    <div class="flex items-center gap-2">
-                        <label for="filter-month" class="text-base font-medium text-gray-700">เดือน:</label>
-                        <select id="filter-month" class="border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-base p-3 input-full-width"></select>
-                    </div>
-                    <!-- SWAPPED ORDER: YEAR SECOND -->
-                    <div class="flex items-center gap-2">
-                        <label for="filter-year" class="text-base font-medium text-gray-700">ปี:</label>
-                        <select id="filter-year" class="border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-base p-3 input-full-width"></select>
-                    </div>
-                </div>
-            </div>
+                 <h2 class="text-2xl font-bold mb-4 md:mb-0">ประวัติรายการ</h2>
+                 <div class="flex flex-wrap items-center gap-2 md:gap-4">
+                     <!-- SWAPPED ORDER: MONTH FIRST -->
+                     <div class="flex items-center gap-2">
+                         <label for="filter-month" class="text-base font-medium text-gray-700">เดือน:</label>
+                         <select id="filter-month" class="border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-base p-3 input-full-width"></select>
+                     </div>
+                     <!-- SWAPPED ORDER: YEAR SECOND -->
+                     <div class="flex items-center gap-2">
+                         <label for="filter-year" class="text-base font-medium text-gray-700">ปี:</label>
+                         <select id="filter-year" class="border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-base p-3 input-full-width"></select>
+                     </div>
+                 </div>
+             </div>
             <ul id="transaction-list" class="space-y-3">
                  <li class="text-center text-gray-500 py-4">ยังไม่มีรายการ...</li>
             </ul>
@@ -116,7 +120,7 @@
                         <option value="expense">รายจ่าย</option>
                     </select>
                 </div>
-                 
+                
                 <!-- 3. ตัวเลือก (1 col) -->
                  <div>
                     <label for="platform" class="block text-sm font-medium text-gray-700">ตัวเลือก</label>
@@ -204,9 +208,30 @@
 
     </div>
 
-    <!-- Sticky Total Balance Corner -->
-    <div id="sticky-footer" class="fixed top-4 right-4 bg-gray-900 bg-opacity-80 backdrop-blur-sm text-white py-2 px-4 rounded-full shadow-lg z-20">
-         <p id="total-balance-sticky" class="text-lg font-bold text-green-400">฿0.00</p>
+    <!-- Sticky Summary Panel (NEW) -->
+    <div id="sticky-summary-panel" class="fixed top-4 right-4 bg-gray-800 text-white shadow-lg z-40 rounded-xl p-3 w-auto transform translate-x-full transition-transform duration-300 ease-in-out">
+        <div class="space-y-1 text-right">
+            <!-- Section 1: ยอดเงินคงเหลือ -->
+            <div>
+                <span class="block text-xs text-gray-400">ยอดเงินคงเหลือ</span>
+                <span id="sticky-total-balance" class="font-bold text-xl">฿0.00</span>
+            </div>
+            
+            <!-- Divider -->
+            <hr class="border-gray-600 my-1">
+            
+            <!-- Section 2: กำไร (เดือนที่เลือก) -->
+            <div>
+                <span id="sticky-monthly-profit-label" class="block text-xs text-gray-400">กำไร (เดือนปัจจุบัน)</span>
+                <span id="sticky-monthly-profit" class="font-semibold text-base text-green-400">0.00%</span>
+            </div>
+            
+            <!-- Section 3: กำไร (ทั้งหมด) -->
+            <div>
+                <span class="block text-xs text-gray-400">กำไร (ทั้งหมด)</span>
+                <span id="sticky-overall-profit" class="font-semibold text-base text-green-400">0.00%</span>
+            </div>
+        </div>
     </div>
 
 
@@ -249,6 +274,7 @@
         const SHEET_ID = "1v5sCCiHAMN6U3pcEspx1EWHo9OC99MyfS7E0ieiZTvA";
 
         // --- DOM Elements ---
+        const loadingOverlay = document.getElementById('loading-overlay'); 
         const balanceEl = document.getElementById('balance');
         const totalIncomeEl = document.getElementById('total-income');
         const totalExpenseEl = document.getElementById('total-expense');
@@ -262,7 +288,7 @@
         
         const typeInput = document.getElementById('type');
         const platformInput = document.getElementById('platform');
-        const descriptionInput = document.getElementById('description'); // Text Input for Item/Description
+        const descriptionInput = document.getElementById('description');
         const amountInput = document.getElementById('amount');
         
         // Filters
@@ -283,8 +309,12 @@
         const expenseTitleEl = document.getElementById('expense-title');
         const balanceTitleEl = document.getElementById('balance-title');
         
-        // Sticky Footer
-        const totalBalanceStickyEl = document.getElementById('total-balance-sticky');
+        // Sticky Panel Elements
+        const stickySummaryPanel = document.getElementById('sticky-summary-panel');
+        const stickyTotalBalanceEl = document.getElementById('sticky-total-balance');
+        const stickyMonthlyProfitLabelEl = document.getElementById('sticky-monthly-profit-label');
+        const stickyMonthlyProfitEl = document.getElementById('sticky-monthly-profit');
+        const stickyOverallProfitEl = document.getElementById('sticky-overall-profit');
         
         // Custom Modal Elements
         const customModal = document.getElementById('custom-modal');
@@ -309,7 +339,6 @@
             confirmMessageEl.textContent = message;
             confirmModal.classList.remove('hidden');
 
-            // Clone and replace buttons to ensure fresh event listeners (Critical for proper confirmation flow)
             confirmOkBtn.replaceWith(confirmOkBtn.cloneNode(true));
             confirmCancelBtn.replaceWith(confirmCancelBtn.cloneNode(true));
             
@@ -339,9 +368,6 @@
 
         // --- Google Apps Script Connector (JSONP) ---
 
-        /**
-         * ใช้สำหรับเรียก Google Apps Script (GS) โดยใช้เทคนิค JSONP
-         */
         function callGoogleScript(action, payload = {}) {
             const callbackName = 'jsonpCallback_' + new Date().getTime() + Math.random().toString(36).substr(2, 5);
             
@@ -517,14 +543,12 @@
             const typeValue = typeInput.value;
             let descriptionForTransaction = descriptionInput.value.trim(); 
 
-            // --- Auto Description Logic ---
             const platformValue = platformInput.value;
             if (typeValue === 'income' && (platformValue.startsWith('Shopee') || platformValue.startsWith('Lazada'))) {
                 descriptionForTransaction = "ยอดโอนเข้าบัญชี";
             } else if (typeValue === 'expense' && platformValue === 'เงินเดือนพนักงาน') {
                 descriptionForTransaction = "เงินเดือน(Aom)";
             }
-            // --- End Auto Description Logic ---
 
             const transaction = {
                 id: generateID(),
@@ -535,59 +559,47 @@
                 amount: amountValue
             };
 
-            // 1. Optimistic Update
             transactions.push(transaction);
             updateLocalStorage();
             updateUI(); 
-            updateTotalBalanceSticky();
             
             savingIndicator.style.display = 'inline';
             savingIndicator.style.opacity = '1';
             addTransactionBtn.disabled = true;
             
             try {
-                // 2. Background Saving
                 await callGoogleScript('addData', transaction);
             } catch (error) {
                 showMessage('ไม่สามารถบันทึกข้อมูลไปยัง Google Sheet ได้: ' + error.message + ' รายการจะถูกดึงกลับมาในหน้าจอเมื่อรีโหลด');
-                await init(false); // Force reload to revert failed transaction
+                await init(false);
             } finally {
                 savingIndicator.style.opacity = '0';
                 setTimeout(() => { savingIndicator.style.display = 'none'; }, 300);
-                // Clear form inputs (leave date unchanged)
                 descriptionInput.value = ''; 
                 amountInput.value = '';
                 addTransactionBtn.disabled = false;
             }
         }
         
-        /**
-         * Optimistic Delete
-         */
         function removeTransaction(id, date) { 
             showConfirm('คุณต้องการลบรายการนี้ใช่หรือไม่? การดำเนินการนี้ไม่สามารถย้อนกลับได้', async (confirmed) => {
                 if (!confirmed) return;
                 
-                // 1. Optimistic Update (Immediate)
                 const originalTransactions = [...transactions];
                 transactions = transactions.filter(t => t.id.toString() !== id.toString());
                 updateLocalStorage();
                 updateUI();
-                updateTotalBalanceSticky();
                 
                 savingIndicator.style.display = 'inline';
                 savingIndicator.style.opacity = '1';
                 
                 try {
-                    // 2. Background Deleting
                     await callGoogleScript('deleteData', { id: id, date: date }); 
                 } catch (error) {
-                    // 3. Handle failure
                     showMessage('เกิดข้อผิดพลาดในการลบรายการใน Google Sheet: ' + error.message + ' รายการจะถูกดึงกลับมาในหน้าจอ');
-                    transactions = originalTransactions; // Revert local state
+                    transactions = originalTransactions;
                     updateLocalStorage();
                     updateUI();
-                    updateTotalBalanceSticky();
                 } finally {
                     savingIndicator.style.opacity = '0';
                     setTimeout(() => { savingIndicator.style.display = 'none'; }, 300);
@@ -619,32 +631,57 @@
         }
         
         // --- UI Rendering and Filtering ---
-        function updateTotalBalanceSticky() {
-            if (!transactions || transactions.length === 0) {
-                totalBalanceStickyEl.innerText = `฿0.00`;
-                totalBalanceStickyEl.classList.remove('text-red-400');
-                totalBalanceStickyEl.classList.add('text-green-400');
-                return;
-            }
-
+        function updateStickyPanel() {
+            // 1. Overall Calculations
             const totalIncome = transactions
                 .filter(t => t.type === 'income')
                 .reduce((acc, t) => acc + t.amount, 0);
-            const totalExpense = transactions
+            
+            const totalExpense = transactions // For balance calculation
                 .filter(t => t.type === 'expense')
                 .reduce((acc, t) => acc + t.amount, 0);
-            
+
+            const totalExpenseForProfit = transactions // For profit calculation (excludes salary)
+                .filter(t => t.type === 'expense' && t.platform !== 'เงินเดือนพนักงาน')
+                .reduce((acc, t) => acc + t.amount, 0);
+
             const totalBalance = totalIncome - totalExpense;
-            
-            totalBalanceStickyEl.innerText = `฿${formatMoney(totalBalance)}`;
-            
-            if (totalBalance < 0) {
-                totalBalanceStickyEl.classList.remove('text-green-400');
-                totalBalanceStickyEl.classList.add('text-red-400');
-            } else {
-                totalBalanceStickyEl.classList.remove('text-red-400');
-                totalBalanceStickyEl.classList.add('text-green-400');
+
+            let overallProfit = 0;
+            if (totalIncome > 0) {
+                overallProfit = ((totalIncome - totalExpenseForProfit) / totalIncome) * 100;
             }
+
+            // 2. Monthly Calculations
+            const selectedYear = filterYearInput.value;
+            const selectedMonth = filterMonthInput.value;
+            const filteredTransactions = transactions.filter(t => t.date.startsWith(`${selectedYear}-${selectedMonth}`));
+            
+            const monthlyIncome = filteredTransactions
+                .filter(t => t.type === 'income')
+                .reduce((acc, t) => acc + t.amount, 0);
+            
+            const monthlyExpenseForProfit = filteredTransactions // For profit calculation (excludes salary)
+                .filter(t => t.type === 'expense' && t.platform !== 'เงินเดือนพนักงาน')
+                .reduce((acc, t) => acc + t.amount, 0);
+            
+            let monthlyProfit = 0;
+            if (monthlyIncome > 0) {
+                monthlyProfit = ((monthlyIncome - monthlyExpenseForProfit) / monthlyIncome) * 100;
+            }
+
+            // 3. Update DOM Elements
+            stickyTotalBalanceEl.textContent = `฿${formatMoney(totalBalance)}`;
+            
+            const monthYearText = getFormattedMonthAndYear(selectedYear, selectedMonth);
+            stickyMonthlyProfitLabelEl.textContent = `กำไร ${monthYearText}`;
+            stickyMonthlyProfitEl.textContent = `${monthlyProfit.toFixed(2)}%`;
+            stickyMonthlyProfitEl.classList.toggle('text-green-400', monthlyProfit >= 0);
+            stickyMonthlyProfitEl.classList.toggle('text-red-400', monthlyProfit < 0);
+
+            stickyOverallProfitEl.textContent = `${overallProfit.toFixed(2)}%`;
+            stickyOverallProfitEl.classList.toggle('text-green-400', overallProfit >= 0);
+            stickyOverallProfitEl.classList.toggle('text-red-400', overallProfit < 0);
         }
 
         function getPlatformColor(platform) {
@@ -675,27 +712,17 @@
             item.classList.add('transaction-item', ...rowColor.split(' '), 'p-4', 'border', 'rounded-xl', 'flex', 'flex-col', 'transition', 'duration-200', 'space-y-1');
 
             item.innerHTML = `
-                <!-- Row 1: Description (Full Width) -->
                 <div class="font-bold text-gray-800 text-base mb-1">${transaction.description}</div>
-                
-                <!-- Row 2: Date/Platform and Amount/Delete on the same row (justify-between) -->
                 <div class="flex justify-between items-center w-full">
-                    
-                    <!-- Left Side: Date and Platform -->
                     <div class="text-sm text-gray-500 flex-grow pr-4">
                         <span>${formattedDate}</span> | 
                         <span class="${platformColor} font-semibold">${transaction.platform}</span>
                     </div>
-
-                    <!-- Right Side: Amount and Delete Button -->
                     <div class="flex items-center space-x-2 flex-shrink-0">
-                        <!-- Amount -->
                         <span class="font-bold text-lg ${amountColor}">${sign}฿${formatMoney(transaction.amount)}</span>
-                        
-                        <!-- Delete Button -->
                         <button class="bg-red-500 hover:bg-red-600 text-white text-xs py-1 px-2 rounded-full shadow-md w-8 h-8 flex items-center justify-center" onclick="removeTransaction('${transaction.id}', '${transaction.date}')">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                               <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm4 0a1 1 0 10-2 0v6a1 1 0 102 0V8z" clip-rule="evenodd" />
+                                <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm4 0a1 1 0 10-2 0v6a1 1 0 102 0V8z" clip-rule="evenodd" />
                             </svg>
                         </button>
                     </div>
@@ -754,7 +781,6 @@
                 placeholderPlatformOption.hidden = true;
                 
                 if (selectedType === 'expense') {
-                    // Filter Platform options for Expense
                     Array.from(allPlatforms).forEach((opt, index) => {
                         const isExpenseItem = opt.value === 'สั่งซื้อสินค้า' || opt.value === 'เงินเดือนพนักงาน';
                         opt.hidden = !isExpenseItem && index !== 0;
@@ -765,7 +791,6 @@
                     }
                     
                 } else { // Income
-                    // Filter Platform options for Income
                     Array.from(allPlatforms).forEach((opt, index) => {
                         const isIncomeItem = opt.value !== 'สั่งซื้อสินค้า' && opt.value !== 'เงินเดือนพนักงาน';
                         opt.hidden = !isIncomeItem && index !== 0;
@@ -776,7 +801,6 @@
                     }
                 }
             } else {
-                // Initial/Default state
                 platformInput.disabled = true;
                 placeholderPlatformOption.hidden = false;
                 platformInput.value = "";
@@ -943,7 +967,6 @@
 
             const filteredTransactions = transactions.filter(t => t.date.startsWith(selectedMonthYear));
             
-            // Sort by date ascending (Oldest first/FIFO)
             filteredTransactions.sort((a, b) => new Date(a.date) - new Date(b.date));
             
             transactionListEl.innerHTML = '';
@@ -953,12 +976,14 @@
                  filteredTransactions.forEach(addTransactionDOM);
             }
             updateValues(filteredTransactions);
+            updateStickyPanel();
         }
 
-        /**
-         * Initial load function: Always tries to sync with Google Sheet.
-         */
         async function init(isInitialLoad = true) {
+            
+            if (isInitialLoad) {
+                loadingOverlay.style.display = 'flex';
+            }
             
             initializeDateDropdowns();
 
@@ -992,7 +1017,13 @@
                 }
             } finally {
                 updateUI();
-                updateTotalBalanceSticky();
+                if (isInitialLoad) {
+                    loadingOverlay.style.display = 'none';
+                    // Show panel after initial load with a slight delay
+                    setTimeout(() => {
+                        stickySummaryPanel.classList.add('visible');
+                    }, 300);
+                }
             }
         }
 
