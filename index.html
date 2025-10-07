@@ -47,6 +47,9 @@
             width: 100%;
         }
         /* CSS for the sticky panel visibility */
+        #sticky-summary-panel {
+            cursor: pointer; /* CHANGE: ทำให้เมาส์เป็นรูปมือเมื่อชี้ */
+        }
         #sticky-summary-panel.visible {
             transform: translateX(0); /* Slides the panel into view */
         }
@@ -1020,9 +1023,9 @@
                 if (isInitialLoad) {
                     loadingOverlay.style.display = 'none';
                     // Show panel after initial load with a slight delay
-                    setTimeout(() => {
-                        stickySummaryPanel.classList.add('visible');
-                    }, 300);
+                    // setTimeout(() => {
+                    //     stickySummaryPanel.classList.add('visible');
+                    // }, 300);
                 }
             }
         }
@@ -1032,6 +1035,11 @@
         filterYearInput.addEventListener('change', updateUI); 
         filterMonthInput.addEventListener('change', updateUI); 
         typeInput.addEventListener('change', updatePlatformOptions); 
+        
+        // CHANGE: เพิ่ม Event Listener สำหรับการคลิกที่ sticky panel
+        stickySummaryPanel.addEventListener('click', () => {
+            stickySummaryPanel.classList.toggle('visible');
+        });
         
         window.removeTransaction = removeTransaction;
 
